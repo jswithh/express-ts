@@ -1,0 +1,30 @@
+import { Router } from 'express';
+import { SeoController } from './seo.controller';
+import { checkAuth } from '../../auth/middleware/checkAuth';
+import { checkRole } from '../../auth/middleware/checkRole';
+
+const router = Router();
+
+const seoController = new SeoController();
+router
+  .get(
+    '/:courseId',
+    [checkAuth, checkRole(['admin', 'user'])],
+    seoController.getAll,
+  )
+  .post(
+    '/create/:courseId',
+    [checkAuth, checkRole(['admin', 'user'])],
+    seoController.create,
+  )
+  .patch(
+    '/update/:courseId',
+    [checkAuth, checkRole(['admin', 'user'])],
+    seoController.update,
+  )
+  .delete(
+    '/delete/:id',
+    [checkAuth, checkRole(['admin', 'user'])],
+    seoController.delete,
+  );
+export default router;
