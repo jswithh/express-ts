@@ -1,6 +1,6 @@
 import { db } from '../../db/database';
 import { categories } from '../../db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, isNull } from 'drizzle-orm';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import slugify from 'slugify';
@@ -20,6 +20,7 @@ export class CategoriesService {
       })
       .from(categories)
       .orderBy(desc(categories.id))
+      .where(isNull(categories.deletedAt))
       .limit(limit)
       .offset(offset);
 
@@ -57,7 +58,8 @@ export class CategoriesService {
         slug: categories.slug,
       })
       .from(categories)
-      .where(eq(categories.slug, slug));
+      .where(eq(categories.slug, slug))
+      .where(isNull(categories.deletedAt));
 
     return category[0];
   }
@@ -66,7 +68,8 @@ export class CategoriesService {
     const category = await db
       .select()
       .from(categories)
-      .where(eq(categories.slug, slug));
+      .where(eq(categories.slug, slug))
+      .where(isNull(categories.deletedAt));
 
     if (category.length === 0) {
       throw new Error('Category not found');
@@ -95,7 +98,10 @@ export class CategoriesService {
   }
 
   async delete(slug: string) {
-    await db.delete(categories).where(eq(categories.slug, slug));
+    await db
+      .update(categories)
+      .set({ deletedAt: new Date() })
+      .where(eq(categories.slug, slug));
 
     return 'Category deleted successfully!';
   }

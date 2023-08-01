@@ -36,6 +36,6 @@ app.use(
 );
 app.use('/api/course/seo', require('./module/courses/seo/seo.route').default);
 
-app.use('/api/blogs', require('./module/blogs/blog/blog.route').default);
+app.use('/api/blog', require('./module/blogs/blog/blog.route').default);
 app.use('/api/blog/seo', require('./module/blogs/seo/seo.route').default);
 export default app;

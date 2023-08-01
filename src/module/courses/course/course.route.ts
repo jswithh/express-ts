@@ -33,7 +33,7 @@ router
     ]),
     courseController.update,
   )
-  .delete(
+  .patch(
     '/delete/:slug',
     [checkAuth, checkRole(['admin', 'user'])],
     courseController.delete,

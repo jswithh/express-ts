@@ -1,23 +1,23 @@
 import { db } from '../../../db/database';
-import { course_Seo } from '../../../db/schema';
+import { blog_Seo } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import { CreateSeoDto } from './dto/create-seo.dto';
 import { UpdateSeoDto } from './dto/update-seo.dto';
 
 export class SeoService {
-  async getAll(courseId: number, page: number, limit: number) {
+  async getAll(blogId: number, page: number, limit: number) {
     if (page <= 0 || limit <= 0) {
       throw new Error('Invalid page or limit value');
     }
     const offset = (page - 1) * limit;
     const pageSeo = await db
       .select({
-        id: course_Seo.id,
-        name: course_Seo.name,
-        property: course_Seo.property,
-        content: course_Seo.content,
+        id: blog_Seo.id,
+        name: blog_Seo.name,
+        property: blog_Seo.property,
+        content: blog_Seo.content,
       })
-      .from(course_Seo)
+      .from(blog_Seo)
       .limit(limit)
       .offset(offset);
 
@@ -36,7 +36,7 @@ export class SeoService {
   }
 
   async create(CreateSeoDto: CreateSeoDto) {
-    await db.insert(course_Seo).values(CreateSeoDto);
+    await db.insert(blog_Seo).values(CreateSeoDto);
     return 'Seo created successfully!';
   }
 
@@ -47,7 +47,7 @@ export class SeoService {
           throw new Error('Invalid data. "id" is required for update.');
         }
 
-        await db.update(course_Seo).set(dto).where(eq(course_Seo.id, dto.id));
+        await db.update(blog_Seo).set(dto).where(eq(blog_Seo.id, dto.id));
       }
 
       return 'Seo updated successfully!';
@@ -58,7 +58,7 @@ export class SeoService {
   }
 
   async delete(id: number) {
-    await db.delete(course_Seo).where(eq(course_Seo.id, id));
+    await db.delete(blog_Seo).where(eq(blog_Seo.id, id));
 
     return 'Seo deleted successfully!';
   }

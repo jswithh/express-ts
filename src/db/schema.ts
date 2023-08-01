@@ -34,6 +34,7 @@ export const categories = mysqlTable(
     slug: varchar('slug', { length: 255 }).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    deletedAt: timestamp('deletedAt'),
   },
   (categories) => ({
     slugIndex: uniqueIndex('slug_idx').on(categories.slug),
@@ -66,6 +67,7 @@ export const courses = mysqlTable(
       .default('draft'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    deletedAt: timestamp('deletedAt'),
   },
   (courses) => ({
     slugIndex: uniqueIndex('slug_idx').on(courses.slug),
@@ -190,6 +192,7 @@ export const blogs = mysqlTable(
     status: mysqlEnum('status', ['draft', 'published']),
     createdAt: timestamp('createdAt').defaultNow().notNull(),
     updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+    deletedAt: timestamp('deletedAt'),
   },
 
   (blogs) => ({

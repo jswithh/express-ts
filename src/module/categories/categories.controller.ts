@@ -65,6 +65,11 @@ export class CategoriesController {
     const categorySlug = req.params.slug;
 
     try {
+      const category = await this.categoriesService.show(categorySlug);
+      if (!category) {
+        return res.status(404).json({ error: 'Category not found' });
+      }
+
       await this.categoriesService.delete(categorySlug);
       return res.json({ message: 'Category deleted successfully' });
     } catch (error) {

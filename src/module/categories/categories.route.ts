@@ -19,7 +19,7 @@ router
     [checkAuth, checkRole(['admin', 'user'])],
     categoryController.update,
   )
-  .delete(
+  .patch(
     '/delete/:slug',
     [checkAuth, checkRole(['admin', 'user'])],
     categoryController.delete,

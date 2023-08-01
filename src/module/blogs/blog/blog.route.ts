@@ -25,7 +25,7 @@ router
     [checkAuth, checkRole(['admin', 'user'])],
     blogController.update,
   )
-  .delete(
+  .patch(
     '/delete/:slug',
     [checkAuth, checkRole(['admin', 'user'])],
     blogController.delete,

@@ -7,7 +7,7 @@ import {
   course_learningMaterial,
   courses,
 } from '../../../db/schema';
-import { InferModel, desc, eq } from 'drizzle-orm';
+import { InferModel, desc, eq, isNull } from 'drizzle-orm';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import slugify from 'slugify';
@@ -30,6 +30,7 @@ export class CoursesService {
       })
       .from(courses)
       .where(eq(courses.status, 'published'))
+      .where(isNull(courses.deletedAt))
       .orderBy(desc(courses.id))
       .limit(limit)
       .offset(offset);
@@ -112,6 +113,7 @@ export class CoursesService {
       })
       .from(courses)
       .where(eq(courses.slug, slug))
+      .where(isNull(courses.deletedAt))
       .leftJoin(categories, eq(courses.categoryId, categories.id))
       .leftJoin(
         course_learningMaterial,
@@ -185,6 +187,7 @@ export class CoursesService {
     const course = await db
       .select()
       .from(courses)
+      .where(isNull(courses.deletedAt))
       .where(eq(courses.slug, slug));
 
     if (course.length === 0) {
@@ -211,7 +214,10 @@ export class CoursesService {
   }
 
   async delete(slug: string) {
-    await db.delete(courses).where(eq(courses.slug, slug));
+    await db
+      .update(courses)
+      .set({ deletedAt: new Date() })
+      .where(eq(courses.slug, slug));
 
     return 'Course deleted successfully!';
   }

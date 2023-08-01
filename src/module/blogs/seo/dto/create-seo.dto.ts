@@ -1,5 +1,5 @@
 export interface CreateSeoDto {
-  courseId: number;
+  blogId: number;
   name: string;
   property: string;
   content: string;

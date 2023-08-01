@@ -8,17 +8,17 @@ const router = Router();
 const seoController = new SeoController();
 router
   .get(
-    '/:courseId',
+    '/:blogId',
     [checkAuth, checkRole(['admin', 'user'])],
     seoController.getAll,
   )
   .post(
-    '/create/:courseId',
+    '/create/:blogId',
     [checkAuth, checkRole(['admin', 'user'])],
     seoController.create,
   )
   .patch(
-    '/update/:courseId',
+    '/update/:blogId',
     [checkAuth, checkRole(['admin', 'user'])],
     seoController.update,
   )

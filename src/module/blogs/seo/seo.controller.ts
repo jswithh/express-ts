@@ -8,27 +8,27 @@ export class SeoController {
 
   getAll = async (req: Request, res: Response) => {
     try {
-      const courseId = Number(req.params.courseId);
+      const blogId = Number(req.params.blogId);
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
 
-      const courses = await this.seoService.getAll(courseId, page, limit);
-      return res.json(courses);
+      const blogs = await this.seoService.getAll(blogId, page, limit);
+      return res.json(blogs);
     } catch (error) {
-      console.error('Error in CoursesController.getAll:', error);
+      console.error('Error in BlogsController.getAll:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   };
 
   create = async (req: Request, res: Response) => {
-    const courseId = Number(req.params.courseId);
+    const blogId = Number(req.params.blogId);
     const createSeoDto: CreateSeoDto[] = req.body;
 
     const createdData: any = [];
 
     createSeoDto.forEach((item) => {
       createdData.push(item);
-      createdData[createdData.length - 1].courseId = courseId;
+      createdData[createdData.length - 1].blogId = blogId;
     });
     try {
       if (createdData.length > 0) {
@@ -42,7 +42,7 @@ export class SeoController {
   };
 
   update = async (req: Request, res: Response) => {
-    const courseId = Number(req.params.courseId);
+    const blogId = Number(req.params.blogId);
     const updateseoDto: UpdateSeoDto[] = req.body;
 
     const createdData: any = [];
@@ -51,10 +51,10 @@ export class SeoController {
     updateseoDto.forEach((item) => {
       if (item && item.hasOwnProperty('id')) {
         updatedData.push(item);
-        updatedData[updatedData.length - 1].courseId = courseId;
+        updatedData[updatedData.length - 1].blogId = blogId;
       } else {
         createdData.push(item);
-        createdData[createdData.length - 1].courseId = courseId;
+        createdData[createdData.length - 1].blogId = blogId;
       }
     });
 

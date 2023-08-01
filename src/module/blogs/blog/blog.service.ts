@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
 import { categories, blog_Seo, blogs } from '../../../db/schema';
-import { InferModel, desc, eq } from 'drizzle-orm';
+import { InferModel, desc, eq, isNull } from 'drizzle-orm';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 import slugify from 'slugify';
@@ -21,6 +21,7 @@ export class BlogsService {
       })
       .from(blogs)
       .where(eq(blogs.status, 'published'))
+      .where(isNull(blogs.deletedAt))
       .orderBy(desc(blogs.id))
       .leftJoin(categories, eq(blogs.categoryId, categories.id))
       .limit(limit)
@@ -77,6 +78,8 @@ export class BlogsService {
       })
       .from(blogs)
       .where(eq(blogs.slug, slug))
+      .where(eq(blogs.status, 'published'))
+      .where(isNull(blogs.deletedAt))
       .leftJoin(categories, eq(blogs.categoryId, categories.id))
       .leftJoin(blog_Seo, eq(blogs.id, blog_Seo.blogId));
 
@@ -120,7 +123,11 @@ export class BlogsService {
   }
 
   async update(slug: string, updateBlogDto: UpdateBlogDto) {
-    const blog = await db.select().from(blogs).where(eq(blogs.slug, slug));
+    const blog = await db
+      .select()
+      .from(blogs)
+      .where(eq(blogs.slug, slug))
+      .where(isNull(blogs.deletedAt));
 
     if (blog.length === 0) {
       throw new Error('Blog not found');
@@ -134,7 +141,7 @@ export class BlogsService {
       if (newSlug !== slug) {
         await db
           .update(blogs)
-          .set({ ...updateBlogDto, slug: newSlug })
+          .set({ ...updateBlogDto, slug: newSlug, updatedAt: new Date() })
           .where(eq(blogs.slug, slug));
 
         return 'Blog updated successfully!';
@@ -146,9 +153,16 @@ export class BlogsService {
   }
 
   async delete(slug: string) {
-    await db.delete(blogs).where(eq(blogs.slug, slug));
+    const blog = await db.select().from(blogs).where(eq(blogs.slug, slug));
 
-    return 'Blog deleted successfully!';
+    if (blog.length === 0) {
+      throw new Error('Blog not found');
+    }
+
+    await db
+      .update(blogs)
+      .set({ deletedAt: new Date() })
+      .where(eq(blogs.slug, slug));
   }
 
   async blogsDraft(page: number, limit: number) {
@@ -166,9 +180,11 @@ export class BlogsService {
       })
       .from(blogs)
       .where(eq(blogs.status, 'draft'))
+      .where(isNull(blogs.deletedAt))
       .orderBy(desc(blogs.id))
       .limit(limit)
-      .offset(offset);
+      .offset(offset)
+      .leftJoin(categories, eq(blogs.categoryId, categories.id));
 
     return pageBlog;
   }

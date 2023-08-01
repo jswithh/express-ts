@@ -54,6 +54,10 @@ export class BlogsController {
     const updateBlogDto: UpdateBlogDto = req.body;
 
     try {
+      const blog = await this.blogsService.show(blogSlug);
+      if (!blog) {
+        return res.status(404).json({ error: 'Blog not found' });
+      }
       await this.blogsService.update(blogSlug, updateBlogDto);
       return res.json({ message: 'Blog updated successfully' });
     } catch (error) {
@@ -66,6 +70,10 @@ export class BlogsController {
     const blogSlug = req.params.slug;
 
     try {
+      const blog = await this.blogsService.show(blogSlug);
+      if (!blog) {
+        return res.status(404).json({ error: 'Blog not found' });
+      }
       await this.blogsService.delete(blogSlug);
       return res.json({ message: 'Blog deleted successfully' });
     } catch (error) {
