@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"","sources":["../../../../src/config/google-analytic/index.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,MAAM,QAAQ,CAAC;AACjC,MAAM,CAAC,MAAM,EAAE,CAAC;AAEhB,MAAM,MAAM,GAAG;IACb,QAAQ,EAAE;QACR,UAAU,EAAE,OAAO,CAAC,GAAG,CAAC,uBAAuB;QAC/C,SAAS,EAAE,OAAO,CAAC,GAAG,CAAC,mBAAmB;KAC3C;CACF,CAAC;AAEF,eAAe,MAAM,CAAC"}

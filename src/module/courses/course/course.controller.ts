@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { CoursesService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
+import fs from 'fs';
+import sharp from 'sharp';
 
 export class CoursesController {
   constructor(
@@ -24,13 +26,41 @@ export class CoursesController {
   create = async (req: Request, res: Response) => {
     const createCourseDto: CreateCourseDto = req.body;
 
-    if (req.files) {
+    if (req.file) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const heroImg = files.heroImg[0].path.replace('public', '');
-      const thumbnail = files.thumbnail[0].path.replace('public', '');
-      createCourseDto.heroImg = heroImg;
-      createCourseDto.thumbnail = thumbnail;
+      const heroImg = {
+        buffer: files.heroImg[0].buffer,
+      };
+      const thumbnail = {
+        buffer: files.thumbnail[0].buffer,
+      };
+
+      fs.access('./public/images/course/', (err) => {
+        if (err) {
+          console.log('Directory does not exist.');
+        }
+      });
+
+      const timestamp = new Date().getTime(); // Menggunakan timestamp dalam milidetik
+      const randomSuffix = Math.floor(Math.random() * 10000);
+
+      const heroImgRef = `${timestamp}-${randomSuffix}.webp`;
+      const thumbnailRef = `${timestamp}-${randomSuffix}.webp`;
+
+      await sharp(heroImg.buffer)
+        .webp({ quality: 20 })
+        .toFile('./public/images/course/' + heroImgRef);
+      await sharp(thumbnail.buffer)
+        .webp({ quality: 20 })
+        .toFile('./public/images/course/' + thumbnailRef);
+
+      const heroImgLink = `/images/course/${heroImgRef}`;
+      const thumbnailLink = `/images/course/${thumbnailRef}`;
+
+      createCourseDto.heroImg = heroImgLink;
+      createCourseDto.thumbnail = thumbnailLink;
     }
+
     try {
       const result = await this.coursesService.create(createCourseDto);
       return res.status(201).json(result);
@@ -60,18 +90,39 @@ export class CoursesController {
     const courseSlug = req.params.slug;
     const updateCourseDto: UpdateCourseDto = req.body;
 
-    if (req.files) {
+    if (req.file) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      if (typeof files.heroImg === 'object') {
-        updateCourseDto.heroImg = files.heroImg[0].path.replace('public', '');
-      }
+      const heroImg = {
+        buffer: files.heroImg[0].buffer,
+      };
+      const thumbnail = {
+        buffer: files.thumbnail[0].buffer,
+      };
 
-      if (typeof files.thumbnail === 'object') {
-        updateCourseDto.thumbnail = files.thumbnail[0].path.replace(
-          'public',
-          '',
-        );
-      }
+      fs.access('./public/images/course/', (err) => {
+        if (err) {
+          console.log('Directory does not exist.');
+        }
+      });
+
+      const timestamp = new Date().toISOString();
+      const randomSuffix = Math.floor(Math.random() * 10000);
+
+      const heroImgRef = `${timestamp}-${randomSuffix}.webp`;
+      const thumbnailRef = `${timestamp}-${randomSuffix}.webp`;
+
+      await sharp(heroImg.buffer)
+        .webp({ quality: 20 })
+        .toFile('./public/images/course/' + heroImgRef);
+      await sharp(thumbnail.buffer)
+        .webp({ quality: 20 })
+        .toFile('./public/images/course/' + thumbnailRef);
+
+      const heroImgLink = `/images/course/${heroImgRef}`;
+      const thumbnailLink = `/images/course/${thumbnailRef}`;
+
+      updateCourseDto.heroImg = heroImgLink;
+      updateCourseDto.thumbnail = thumbnailLink;
     }
 
     try {

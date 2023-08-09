@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
-import { course_learningMaterial } from '../../../db/schema';
-import { eq } from 'drizzle-orm';
+import { course_learningMaterial, courses } from '../../../db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { CreatelearningMaterialDto } from './dto/create-learning-material.dto';
 import { UpdatelearningMaterialDto } from './dto/update-learning-material.dto';
 
@@ -19,6 +19,10 @@ export class LearningMaterialService {
         description: course_learningMaterial.description,
       })
       .from(course_learningMaterial)
+      .where(
+        sql`course_learningMaterial.courseId = ${courseId} and courses.deletedAt is null`,
+      )
+      .leftJoin(courses, eq(course_learningMaterial.courseId, courses.id))
       .limit(limit)
       .offset(offset);
 

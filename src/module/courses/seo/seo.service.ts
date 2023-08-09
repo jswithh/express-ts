@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
-import { course_Seo } from '../../../db/schema';
-import { eq } from 'drizzle-orm';
+import { course_Seo, courses } from '../../../db/schema';
+import { eq, isNull, sql } from 'drizzle-orm';
 import { CreateSeoDto } from './dto/create-seo.dto';
 import { UpdateSeoDto } from './dto/update-seo.dto';
 
@@ -18,6 +18,10 @@ export class SeoService {
         content: course_Seo.content,
       })
       .from(course_Seo)
+      .where(
+        sql`course_Seo.courseId = ${courseId} and courses.deletedAt is null`,
+      )
+      .leftJoin(courses, eq(course_Seo.courseId, courses.id))
       .limit(limit)
       .offset(offset);
 

@@ -2,6 +2,7 @@ import multer, { FileFilterCallback } from 'multer';
 import { Request } from 'express';
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 
 interface CustomRequest extends Request {
   fileValidationError?: string;
@@ -18,7 +19,7 @@ const upload = (folderName: string) => {
       } else {
         uploadPath = `public/documents/${folderName}/`;
       }
-
+      console.log(file);
       fs.mkdirSync(uploadPath, { recursive: true });
       cb(null, uploadPath);
     },

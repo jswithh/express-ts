@@ -1,0 +1,219 @@
+import { db } from '../../../db/database';
+import { categories, course_Benefit, course_Faq, course_Feature, course_Seo, course_Testimonial, course_learningMaterial, courses, } from '../../../db/schema';
+import { desc, eq, sql } from 'drizzle-orm';
+import slugify from 'slugify';
+export class CoursesService {
+    async getAll(page, limit) {
+        if (page <= 0 || limit <= 0) {
+            throw new Error('Invalid page or limit value');
+        }
+        const offset = (page - 1) * limit;
+        const pageCourse = await db
+            .select({
+            title: courses.title,
+            slug: courses.slug,
+            thumbnail: courses.thumbnail,
+            price: courses.price,
+            discount: courses.discount,
+            discountPrice: courses.discountPrice,
+        })
+            .from(courses)
+            .where(sql `courses.status = 'published' and courses.deletedAt is null`)
+            .orderBy(desc(courses.id))
+            .limit(limit)
+            .offset(offset);
+        if (pageCourse.length === 0) {
+            return 'No course found';
+        }
+        return pageCourse;
+    }
+    async create(createCourseDto) {
+        const existingCourse = await db
+            .select()
+            .from(courses)
+            .where(eq(courses.title, createCourseDto.title));
+        if (existingCourse.length > 0) {
+            throw new Error('Course already exists');
+        }
+        const newCourse = {
+            ...createCourseDto,
+        };
+        newCourse.slug = slugify(newCourse.title, {
+            replacement: '-',
+            lower: true,
+        });
+        if (newCourse.discount) {
+            newCourse.discountPrice =
+                newCourse.price - (newCourse.price * newCourse.discount) / 100;
+        }
+        const [createdCourseId] = await db.insert(courses).values(newCourse);
+        return {
+            courseId: createdCourseId.insertId,
+            message: 'Course created successfully!',
+        };
+    }
+    async show(slug) {
+        const rows = await db
+            .select({
+            courses: {
+                id: courses.id,
+                title: courses.title,
+                slug: courses.slug,
+                subtitle: courses.subtitle,
+                description: courses.description,
+                competency_unit: courses.competency_unit,
+                price: courses.price,
+                discount: courses.discount,
+                priceDiscount: courses.discountPrice,
+                heroImg: courses.heroImg,
+                demoVideo: courses.demoVideo,
+                category: categories.name,
+            },
+            course_learningMaterial: {
+                kkni: course_learningMaterial.kkni,
+                kkni_title: course_learningMaterial.kkni,
+                desription: course_learningMaterial.description,
+            },
+            course_Feature: {
+                feature: course_Feature.feature,
+            },
+            course_Benefit: {
+                benefit: course_Benefit.benefit,
+            },
+            course_Faq: {
+                question: course_Faq.question,
+                answer: course_Faq.answer,
+            },
+            course_Testimonial: {
+                star: course_Testimonial.star,
+                name: course_Testimonial.name,
+                profileImg: course_Testimonial.profileImg,
+                review: course_Testimonial.review,
+            },
+            course_Seo: {
+                name: course_Seo.name,
+                property: course_Seo.property,
+                content: course_Seo.content,
+            },
+        })
+            .from(courses)
+            .where(sql `courses.slug = ${slug} and courses.deletedAt is null and courses.status = 'published'`)
+            .leftJoin(categories, eq(courses.categoryId, categories.id))
+            .leftJoin(course_learningMaterial, eq(courses.id, course_learningMaterial.courseId))
+            .leftJoin(course_Feature, eq(courses.id, course_Feature.courseId))
+            .leftJoin(course_Benefit, eq(courses.id, course_Benefit.courseId))
+            .leftJoin(course_Faq, eq(courses.id, course_Faq.courseId))
+            .leftJoin(course_Testimonial, eq(courses.id, course_Testimonial.courseId))
+            .leftJoin(course_Seo, eq(courses.id, course_Seo.courseId));
+        const result = rows.reduce((acc, row) => {
+            const course = row.courses;
+            const learningMaterial = row.course_learningMaterial;
+            const feature = row.course_Feature;
+            const benefit = row.course_Benefit;
+            const faq = row.course_Faq;
+            const testimonial = row.course_Testimonial;
+            const seo = row.course_Seo;
+            if (!acc[course.id]) {
+                acc[course.id] = {
+                    course,
+                    learningMaterials: [],
+                    features: [],
+                    benefits: [],
+                    faqs: [],
+                    testimonials: [],
+                    seo: [],
+                };
+            }
+            if (learningMaterial) {
+                if (!acc[course.id].learningMaterials.some((lm) => lm.kkni === learningMaterial.kkni))
+                    acc[course.id].learningMaterials.push(learningMaterial);
+            }
+            if (feature) {
+                if (!acc[course.id].features.some((f) => f.feature === feature.feature))
+                    acc[course.id].features.push(feature);
+            }
+            if (benefit) {
+                if (!acc[course.id].benefits.some((b) => b.benefit === benefit.benefit))
+                    acc[course.id].benefits.push(benefit);
+            }
+            if (faq) {
+                if (!acc[course.id].faqs.some((f) => f.question === faq.question))
+                    acc[course.id].faqs.push(faq);
+            }
+            if (testimonial) {
+                if (!acc[course.id].testimonials.some((t) => t.name === testimonial.name))
+                    acc[course.id].testimonials.push(testimonial);
+            }
+            if (seo) {
+                if (!acc[course.id].seo.some((s) => s.property === seo.property))
+                    acc[course.id].seo.push(seo);
+            }
+            return acc;
+        }, {});
+        function filterNullValues(obj) {
+            return Object.keys(obj).reduce((acc, key) => {
+                if (obj[key] !== null) {
+                    acc[key] = obj[key];
+                }
+                return acc;
+            }, {});
+        }
+        Object.values(result).forEach((courseData) => {
+            courseData.seo = courseData.seo.map(filterNullValues);
+        });
+        return result[Number(Object.keys(result)[0])];
+    }
+    async update(slug, updateCourseDto) {
+        const course = await db
+            .select()
+            .from(courses)
+            .where(sql `courses.slug = ${slug} and courses.deletedAt is null`);
+        if (course.length === 0) {
+            throw new Error('Course not found');
+        }
+        if (updateCourseDto.title) {
+            const newSlug = slugify(updateCourseDto.title, {
+                replacement: '-',
+                lower: true,
+            });
+            if (newSlug !== slug) {
+                await db
+                    .update(courses)
+                    .set({ ...updateCourseDto, slug: newSlug })
+                    .where(eq(courses.slug, slug));
+                return 'Course updated successfully!';
+            }
+        }
+        await db.update(courses).set(updateCourseDto).where(eq(courses.slug, slug));
+        return 'Course updated successfully!';
+    }
+    async delete(slug) {
+        await db
+            .update(courses)
+            .set({ deletedAt: new Date() })
+            .where(eq(courses.slug, slug));
+        return 'Course deleted successfully!';
+    }
+    async coursesDraft(page, limit) {
+        if (page <= 0 || limit <= 0) {
+            throw new Error('Invalid page or limit value');
+        }
+        const offset = (page - 1) * limit;
+        const pageCourse = await db
+            .select({
+            title: courses.title,
+            slug: courses.slug,
+            thumbnail: courses.thumbnail,
+            price: courses.price,
+            discount: courses.discount,
+            discountPrice: courses.discountPrice,
+        })
+            .from(courses)
+            .where(eq(courses.status, 'draft'))
+            .orderBy(desc(courses.id))
+            .limit(limit)
+            .offset(offset);
+        return pageCourse;
+    }
+}
+//# sourceMappingURL=course.service.js.map

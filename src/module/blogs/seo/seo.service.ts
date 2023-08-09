@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
-import { blog_Seo } from '../../../db/schema';
-import { eq } from 'drizzle-orm';
+import { blog_Seo, blogs } from '../../../db/schema';
+import { eq, isNull } from 'drizzle-orm';
 import { CreateSeoDto } from './dto/create-seo.dto';
 import { UpdateSeoDto } from './dto/update-seo.dto';
 
@@ -18,6 +18,9 @@ export class SeoService {
         content: blog_Seo.content,
       })
       .from(blog_Seo)
+      .where(eq(blog_Seo.blogId, blogId))
+      .where(isNull(blogs.deletedAt))
+      .leftJoin(blogs, eq(blog_Seo.blogId, blogs.id))
       .limit(limit)
       .offset(offset);
 

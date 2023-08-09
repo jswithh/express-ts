@@ -7,7 +7,6 @@ import {
   varchar,
   timestamp,
   text,
-  boolean,
 } from 'drizzle-orm/mysql-core';
 
 export const users = mysqlTable(
@@ -87,6 +86,7 @@ export const courseRelationsMany = relations(courses, ({ many }) => ({
   course_Faq: many(course_Faq),
   course_Testimonial: many(course_Testimonial),
   course_Seo: many(course_Seo),
+  course_Benefit: many(course_Benefit),
 }));
 
 export const course_learningMaterial = mysqlTable('course_learningMaterial', {
@@ -181,6 +181,24 @@ export const course_SeoRelationsOne = relations(course_Seo, ({ one }) => ({
   }),
 }));
 
+export const course_Benefit = mysqlTable('course_Benefit', {
+  id: int('id').primaryKey().autoincrement(),
+  courseId: int('courseId').references(() => courses.id),
+  benefit: text('benefit').notNull(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+
+export const course_BenefitRelationsOne = relations(
+  course_Benefit,
+  ({ one }) => ({
+    course: one(courses, {
+      fields: [course_Benefit.courseId],
+      references: [courses.id],
+    }),
+  }),
+);
+
 export const blogs = mysqlTable(
   'blogs',
   {
@@ -217,6 +235,72 @@ export const blog_Seo = mysqlTable('blog_Seo', {
   name: varchar('name', { length: 255 }),
   property: varchar('property', { length: 255 }),
   content: text('content').notNull(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+
+export const pages = mysqlTable('pages', {
+  id: int('id').primaryKey().autoincrement(),
+  name: varchar('name', { length: 255 }).notNull(),
+  url: varchar('url', { length: 255 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  seoDescription: text('seoDescription').notNull(),
+  content: text('content').notNull(),
+  status: mysqlEnum('status', ['draft', 'published']),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+
+export const businessLine = mysqlTable('businessLine', {
+  id: int('id').primaryKey().autoincrement(),
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull(),
+  images: varchar('images', { length: 255 }).notNull(),
+  content: text('content').notNull(),
+  status: mysqlEnum('status', ['draft', 'published']),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+
+export const jobs = mysqlTable('jobs', {
+  id: int('id').primaryKey().autoincrement(),
+  title: varchar('title', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull(),
+  images: varchar('image', { length: 255 }).notNull(),
+  status: mysqlEnum('status', ['draft', 'published']),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  deletedAt: timestamp('deletedAt'),
+});
+
+export const jobsRelationsMany = relations(jobs, ({ many }) => ({
+  jobsQualification: many(jobsQualification),
+  jobsResponsibility: many(jobsResponsibility),
+  jobsDocument: many(jobsDocument),
+}));
+
+export const jobsQualification = mysqlTable('jobsQualification', {
+  id: int('id').primaryKey().autoincrement(),
+  jobId: int('jobId').references(() => jobs.id),
+  qualification: text('qualification').notNull(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+
+export const jobsResponsibility = mysqlTable('jobsResponsibility', {
+  id: int('id').primaryKey().autoincrement(),
+  jobId: int('jobId').references(() => jobs.id),
+  responsibility: text('responsibility').notNull(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+
+export const jobsDocument = mysqlTable('jobsDocument', {
+  id: int('id').primaryKey().autoincrement(),
+  jobId: int('jobId').references(() => jobs.id),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  document: varchar('document', { length: 255 }).notNull(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 });

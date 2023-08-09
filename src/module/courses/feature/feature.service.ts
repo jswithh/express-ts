@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
-import { course_Feature } from '../../../db/schema';
-import { eq } from 'drizzle-orm';
+import { course_Feature, courses } from '../../../db/schema';
+import { eq, isNull, sql } from 'drizzle-orm';
 import { CreateFeatureDto } from './dto/create-feature.dto';
 import { UpdateFeatureDto } from './dto/update-feature.dto';
 
@@ -16,6 +16,10 @@ export class FeatureService {
         feature: course_Feature.feature,
       })
       .from(course_Feature)
+      .where(
+        sql`course_Feature.courseId = ${courseId} and courses.deletedAt is null`,
+      )
+      .leftJoin(courses, eq(course_Feature.courseId, courses.id))
       .limit(limit)
       .offset(offset);
 

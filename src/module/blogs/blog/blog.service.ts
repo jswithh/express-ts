@@ -101,7 +101,12 @@ export class BlogsService {
       }
 
       if (seo) {
-        acc[blog.id].seo.push(seo);
+        const isSeoExist = acc[blog.id].seo.find(
+          (item: any) => item.property === seo.property,
+        );
+        if (!isSeoExist) {
+          acc[blog.id].seo.push(seo);
+        }
       }
 
       return acc;

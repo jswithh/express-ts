@@ -1,0 +1,1 @@
+ALTER TABLE `businessLine` ADD `slug` varchar(255) NOT NULL AFTER `name`;

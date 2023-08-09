@@ -2,7 +2,9 @@ import { Router } from 'express';
 import { CoursesController } from './course.controller';
 import { checkAuth } from '../../auth/middleware/checkAuth';
 import { checkRole } from '../../auth/middleware/checkRole';
-import uploadMiddleware from '../../../middleware/multer';
+import multer from 'multer';
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const router = Router();
 
@@ -17,7 +19,7 @@ router
   .post(
     '/create',
     [checkAuth, checkRole(['admin', 'user'])],
-    uploadMiddleware('course').fields([
+    upload.fields([
       { name: 'heroImg', maxCount: 1 },
       { name: 'thumbnail', maxCount: 1 },
     ]),
@@ -27,7 +29,7 @@ router
   .patch(
     '/update/:slug',
     [checkAuth, checkRole(['admin', 'user'])],
-    uploadMiddleware('course').fields([
+    upload.fields([
       { name: 'heroImg', maxCount: 1 },
       { name: 'thumbnail', maxCount: 1 },
     ]),

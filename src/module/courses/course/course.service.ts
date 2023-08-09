@@ -1,13 +1,15 @@
 import { db } from '../../../db/database';
 import {
   categories,
+  course_Benefit,
   course_Faq,
   course_Feature,
   course_Seo,
+  course_Testimonial,
   course_learningMaterial,
   courses,
 } from '../../../db/schema';
-import { InferModel, desc, eq, isNull } from 'drizzle-orm';
+import { InferModel, desc, eq, sql } from 'drizzle-orm';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import slugify from 'slugify';
@@ -29,11 +31,14 @@ export class CoursesService {
         discountPrice: courses.discountPrice,
       })
       .from(courses)
-      .where(eq(courses.status, 'published'))
-      .where(isNull(courses.deletedAt))
+      .where(sql`courses.status = 'published' and courses.deletedAt is null`)
       .orderBy(desc(courses.id))
       .limit(limit)
       .offset(offset);
+
+    if (pageCourse.length === 0) {
+      return 'No course found';
+    }
 
     return pageCourse;
   }
@@ -75,7 +80,9 @@ export class CoursesService {
     type LearningMaterial = InferModel<typeof course_learningMaterial>;
     type Feature = InferModel<typeof course_Feature>;
     type Faq = InferModel<typeof course_Faq>;
+    type Testimonial = InferModel<typeof course_Testimonial>;
     type Seo = InferModel<typeof course_Seo>;
+    type Benefit = InferModel<typeof course_Benefit>;
 
     const rows = await db
       .select({
@@ -101,9 +108,18 @@ export class CoursesService {
         course_Feature: {
           feature: course_Feature.feature,
         },
+        course_Benefit: {
+          benefit: course_Benefit.benefit,
+        },
         course_Faq: {
           question: course_Faq.question,
           answer: course_Faq.answer,
+        },
+        course_Testimonial: {
+          star: course_Testimonial.star,
+          name: course_Testimonial.name,
+          profileImg: course_Testimonial.profileImg,
+          review: course_Testimonial.review,
         },
         course_Seo: {
           name: course_Seo.name,
@@ -112,15 +128,18 @@ export class CoursesService {
         },
       })
       .from(courses)
-      .where(eq(courses.slug, slug))
-      .where(isNull(courses.deletedAt))
+      .where(
+        sql`courses.slug = ${slug} and courses.deletedAt is null and courses.status = 'published'`,
+      )
       .leftJoin(categories, eq(courses.categoryId, categories.id))
       .leftJoin(
         course_learningMaterial,
         eq(courses.id, course_learningMaterial.courseId),
       )
       .leftJoin(course_Feature, eq(courses.id, course_Feature.courseId))
+      .leftJoin(course_Benefit, eq(courses.id, course_Benefit.courseId))
       .leftJoin(course_Faq, eq(courses.id, course_Faq.courseId))
+      .leftJoin(course_Testimonial, eq(courses.id, course_Testimonial.courseId))
       .leftJoin(course_Seo, eq(courses.id, course_Seo.courseId));
 
     const result: Record<
@@ -129,14 +148,18 @@ export class CoursesService {
         course: Course;
         learningMaterials: LearningMaterial[];
         features: Feature[];
+        benefits: Benefit[];
         faqs: Faq[];
+        testimonials: Testimonial[];
         seo: Seo[];
       }
     > = rows.reduce((acc: any, row) => {
       const course = row.courses;
       const learningMaterial = row.course_learningMaterial;
       const feature = row.course_Feature;
+      const benefit = row.course_Benefit;
       const faq = row.course_Faq;
+      const testimonial = row.course_Testimonial;
       const seo = row.course_Seo;
 
       if (!acc[course.id]) {
@@ -144,25 +167,57 @@ export class CoursesService {
           course,
           learningMaterials: [],
           features: [],
+          benefits: [],
           faqs: [],
+          testimonials: [],
           seo: [],
         };
       }
 
       if (learningMaterial) {
-        acc[course.id].learningMaterials.push(learningMaterial);
+        if (
+          !acc[course.id].learningMaterials.some(
+            (lm: any) => lm.kkni === learningMaterial.kkni,
+          )
+        )
+          acc[course.id].learningMaterials.push(learningMaterial);
       }
 
       if (feature) {
-        acc[course.id].features.push(feature);
+        if (
+          !acc[course.id].features.some(
+            (f: any) => f.feature === feature.feature,
+          )
+        )
+          acc[course.id].features.push(feature);
+      }
+
+      if (benefit) {
+        if (
+          !acc[course.id].benefits.some(
+            (b: any) => b.benefit === benefit.benefit,
+          )
+        )
+          acc[course.id].benefits.push(benefit);
       }
 
       if (faq) {
-        acc[course.id].faqs.push(faq);
+        if (!acc[course.id].faqs.some((f: any) => f.question === faq.question))
+          acc[course.id].faqs.push(faq);
+      }
+
+      if (testimonial) {
+        if (
+          !acc[course.id].testimonials.some(
+            (t: any) => t.name === testimonial.name,
+          )
+        )
+          acc[course.id].testimonials.push(testimonial);
       }
 
       if (seo) {
-        acc[course.id].seo.push(seo);
+        if (!acc[course.id].seo.some((s: any) => s.property === seo.property))
+          acc[course.id].seo.push(seo);
       }
 
       return acc;
@@ -187,8 +242,7 @@ export class CoursesService {
     const course = await db
       .select()
       .from(courses)
-      .where(isNull(courses.deletedAt))
-      .where(eq(courses.slug, slug));
+      .where(sql`courses.slug = ${slug} and courses.deletedAt is null`);
 
     if (course.length === 0) {
       throw new Error('Course not found');
@@ -238,7 +292,6 @@ export class CoursesService {
         discountPrice: courses.discountPrice,
       })
       .from(courses)
-      .where(eq(courses.status, 'draft'))
       .orderBy(desc(courses.id))
       .limit(limit)
       .offset(offset);

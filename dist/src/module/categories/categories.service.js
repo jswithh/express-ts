@@ -1,0 +1,90 @@
+import { db } from '../../db/database';
+import { categories } from '../../db/schema';
+import { desc, eq, isNull } from 'drizzle-orm';
+import slugify from 'slugify';
+export class CategoriesService {
+    async getAll(page, limit) {
+        if (page <= 0 || limit <= 0) {
+            throw new Error('Invalid page or limit value');
+        }
+        const offset = (page - 1) * limit;
+        const pageCategory = await db
+            .select({
+            id: categories.id,
+            name: categories.name,
+            slug: categories.slug,
+        })
+            .from(categories)
+            .orderBy(desc(categories.id))
+            .where(isNull(categories.deletedAt))
+            .limit(limit)
+            .offset(offset);
+        return pageCategory;
+    }
+    async create(createCategoryDto) {
+        const existingCategory = await db
+            .select()
+            .from(categories)
+            .where(eq(categories.name, createCategoryDto.name));
+        if (existingCategory.length > 0) {
+            throw new Error('Category already exists');
+        }
+        const newCategory = {
+            ...createCategoryDto,
+        };
+        newCategory.slug = slugify(newCategory.name, {
+            replacement: '-',
+            lower: true,
+        });
+        await db.insert(categories).values(newCategory);
+        return 'Category created successfully!';
+    }
+    async show(slug) {
+        const category = await db
+            .select({
+            id: categories.id,
+            name: categories.name,
+            slug: categories.slug,
+        })
+            .from(categories)
+            .where(eq(categories.slug, slug))
+            .where(isNull(categories.deletedAt));
+        return category[0];
+    }
+    async update(slug, updateCategoryDto) {
+        const category = await db
+            .select()
+            .from(categories)
+            .where(eq(categories.slug, slug))
+            .where(isNull(categories.deletedAt));
+        if (category.length === 0) {
+            throw new Error('Category not found');
+        }
+        if (updateCategoryDto.name) {
+            const newSlug = slugify(updateCategoryDto.name, {
+                replacement: '-',
+                lower: true,
+            });
+            if (newSlug !== slug) {
+                await db
+                    .update(categories)
+                    .set({ ...updateCategoryDto, slug: newSlug })
+                    .where(eq(categories.slug, slug));
+                return 'Category updated successfully!';
+            }
+        }
+        await db
+            .update(categories)
+            .set(updateCategoryDto)
+            .where(eq(categories.slug, slug));
+        return 'Category updated successfully!';
+    }
+    async delete(slug) {
+        await db
+            .update(categories)
+            .set({ deletedAt: new Date() })
+            .where(eq(categories.slug, slug));
+        return 'Category deleted successfully!';
+    }
+}
+//# sourceMappingURL=categories.service.js.map
