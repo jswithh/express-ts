@@ -209,7 +209,6 @@ export class CoursesService {
             discountPrice: courses.discountPrice,
         })
             .from(courses)
-            .where(eq(courses.status, 'draft'))
             .orderBy(desc(courses.id))
             .limit(limit)
             .offset(offset);

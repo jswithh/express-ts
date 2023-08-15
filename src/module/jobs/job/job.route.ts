@@ -11,7 +11,7 @@ const router = Router();
 const jobController = new JobController();
 router
   .get('/', jobController.getAll)
-  .get('/:slug', [checkAuth, checkRole(['admin', 'user'])], jobController.show)
+  .get('/:slug', jobController.show)
   .post(
     '/create',
     [checkAuth, checkRole(['admin', 'user'])],
@@ -24,7 +24,7 @@ router
     upload.single('images'),
     jobController.update,
   )
-  .delete(
+  .patch(
     '/delete/:slug',
     [checkAuth, checkRole(['admin', 'user'])],
     jobController.delete,

@@ -32,5 +32,10 @@ app.use('/api/course/testimonial', require('./module/courses/testimonial/testimo
 app.use('/api/blog', require('./module/blogs/blog/blog.route').default);
 app.use('/api/blog/seo', require('./module/blogs/seo/seo.route').default);
 app.use('/api/analytic', require('./module/analytic/analytic.route').default);
+app.use('/api/page', require('./module/pages/pages.route').default);
+app.use('/api/job', require('./module/jobs/job/job.route').default);
+app.use('/api/job-document', require('./module/jobs/job-document/job-document.route').default);
+app.use('/api/job-qualification', require('./module/jobs/job-qualification/job-qualification.route').default);
+app.use('/api/job-responsibility', require('./module/jobs/job-responsibility/job-responsibility.route').default);
 export default app;
 //# sourceMappingURL=app.js.map

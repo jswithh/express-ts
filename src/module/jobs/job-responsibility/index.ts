@@ -1,3 +1,3 @@
-export * from './faq.route';
-export * from './faq.controller';
-export * from './faq.service';
+export * from './job-responsibility.route';
+export * from './job-responsibility.controller';
+export * from './job-responsibility.service';

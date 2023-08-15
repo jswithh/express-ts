@@ -3,6 +3,7 @@ import { jobs } from '../../../db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
+import slugify from 'slugify';
 
 export class JobService {
   async getAll(page: number, limit: number) {
@@ -19,7 +20,7 @@ export class JobService {
           images: jobs.images,
         })
         .from(jobs)
-        .where(sql`status = 'published' AND deleted_at IS NULL`)
+        .where(sql`jobs.deletedAt is null and jobs.status = 'published'`)
         .limit(limit)
         .offset(offset);
 
@@ -44,7 +45,7 @@ export class JobService {
         })
         .from(jobs)
         .where(
-          sql`slug = ${slug} AND status = 'published' AND deleted_at IS NULL`,
+          sql`jobs.slug = ${slug} and jobs.deletedAt is null and jobs.status = 'published'`,
         );
 
       if (job.length === 0) {
@@ -54,11 +55,15 @@ export class JobService {
       return job[0];
     } catch (error) {
       console.error('Error in JobService.show:', error);
-      throw new Error('Failed to get Job');
+      return 'Job not found';
     }
   }
   async create(CreateJobDto: CreateJobDto) {
     try {
+      CreateJobDto.slug = slugify(CreateJobDto.title, {
+        replacement: '-',
+        lower: true,
+      });
       await db.insert(jobs).values(CreateJobDto);
       return 'Job created successfully!';
     } catch (error) {
@@ -69,6 +74,12 @@ export class JobService {
 
   async update(slug: string, UpdateJobDto: UpdateJobDto) {
     try {
+      if (UpdateJobDto.title) {
+        UpdateJobDto.slug = slugify(UpdateJobDto.title, {
+          replacement: '-',
+          lower: true,
+        });
+      }
       await db.update(jobs).set(UpdateJobDto).where(eq(jobs.slug, slug));
 
       return 'Job updated successfully!';
@@ -79,8 +90,16 @@ export class JobService {
   }
 
   async delete(slug: string) {
-    await db.delete(jobs).where(eq(jobs.slug, slug));
+    try {
+      await db
+        .update(jobs)
+        .set({ deletedAt: new Date() })
+        .where(eq(jobs.slug, slug));
 
-    return 'Job deleted successfully!';
+      return 'Job deleted successfully!';
+    } catch (error) {
+      console.error('Error in JobService.delete:', error);
+      throw new Error('Failed to delete Job');
+    }
   }
 }

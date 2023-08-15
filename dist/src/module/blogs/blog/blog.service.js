@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
 import { categories, blog_Seo, blogs } from '../../../db/schema';
-import { desc, eq, isNull } from 'drizzle-orm';
+import { desc, eq, isNull, sql } from 'drizzle-orm';
 import slugify from 'slugify';
 export class BlogsService {
     async getAll(page, limit) {
@@ -16,8 +16,7 @@ export class BlogsService {
             date: blogs.createdAt,
         })
             .from(blogs)
-            .where(eq(blogs.status, 'published'))
-            .where(isNull(blogs.deletedAt))
+            .where(sql `status = 'published' AND deletedAt IS NULL`)
             .orderBy(desc(blogs.id))
             .leftJoin(categories, eq(blogs.categoryId, categories.id))
             .limit(limit)
@@ -145,7 +144,6 @@ export class BlogsService {
             date: blogs.createdAt,
         })
             .from(blogs)
-            .where(eq(blogs.status, 'draft'))
             .where(isNull(blogs.deletedAt))
             .orderBy(desc(blogs.id))
             .limit(limit)

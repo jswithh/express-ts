@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
 import { categories, blog_Seo, blogs } from '../../../db/schema';
-import { InferModel, desc, eq, isNull } from 'drizzle-orm';
+import { InferModel, desc, eq, isNull, sql } from 'drizzle-orm';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 import slugify from 'slugify';
@@ -20,8 +20,7 @@ export class BlogsService {
         date: blogs.createdAt,
       })
       .from(blogs)
-      .where(eq(blogs.status, 'published'))
-      .where(isNull(blogs.deletedAt))
+      .where(sql`status = 'published' AND deletedAt IS NULL`)
       .orderBy(desc(blogs.id))
       .leftJoin(categories, eq(blogs.categoryId, categories.id))
       .limit(limit)
@@ -184,7 +183,6 @@ export class BlogsService {
         date: blogs.createdAt,
       })
       .from(blogs)
-      .where(eq(blogs.status, 'draft'))
       .where(isNull(blogs.deletedAt))
       .orderBy(desc(blogs.id))
       .limit(limit)

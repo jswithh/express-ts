@@ -184,10 +184,57 @@ export const pages = mysqlTable('pages', {
     name: varchar('name', { length: 255 }).notNull(),
     url: varchar('url', { length: 255 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
-    slug: varchar('slug', { length: 255 }).notNull(),
     seoDescription: text('seoDescription').notNull(),
     content: text('content').notNull(),
     status: mysqlEnum('status', ['draft', 'published']),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+export const businessLine = mysqlTable('businessLine', {
+    id: int('id').primaryKey().autoincrement(),
+    name: varchar('name', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 255 }).notNull(),
+    images: varchar('images', { length: 255 }).notNull(),
+    content: text('content').notNull(),
+    status: mysqlEnum('status', ['draft', 'published']),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+export const jobs = mysqlTable('jobs', {
+    id: int('id').primaryKey().autoincrement(),
+    title: varchar('title', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 255 }).notNull(),
+    images: varchar('images', { length: 255 }).notNull(),
+    status: mysqlEnum('status', ['draft', 'published']),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+    deletedAt: timestamp('deletedAt'),
+});
+export const jobsRelationsMany = relations(jobs, ({ many }) => ({
+    jobs_Qualification: many(jobs_Qualification),
+    jobs_Responsibility: many(jobs_Responsibility),
+    jobs_Document: many(jobs_Document),
+}));
+export const jobs_Qualification = mysqlTable('jobs_Qualification', {
+    id: int('id').primaryKey().autoincrement(),
+    jobId: int('jobId').references(() => jobs.id),
+    qualification: text('qualification').notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+export const jobs_Responsibility = mysqlTable('jobs_Responsibility', {
+    id: int('id').primaryKey().autoincrement(),
+    jobId: int('jobId').references(() => jobs.id),
+    responsibility: text('responsibility').notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+});
+export const jobs_Document = mysqlTable('jobs_Document', {
+    id: int('id').primaryKey().autoincrement(),
+    jobId: int('jobId').references(() => jobs.id),
+    name: varchar('name', { length: 255 }).notNull(),
+    email: varchar('email', { length: 255 }).notNull(),
+    document: varchar('document', { length: 255 }).notNull(),
     createdAt: timestamp('createdAt').defaultNow().notNull(),
     updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 });

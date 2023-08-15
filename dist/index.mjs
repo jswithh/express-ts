@@ -52,7 +52,7 @@ import {
   timestamp,
   text
 } from "drizzle-orm/mysql-core";
-var users, categories, categoriesRelations, courses, coursesRelationsOne, courseRelationsMany, course_learningMaterial, course_learningMaterialRelationsOne, course_Feature, course_FeatureRelationsOne, course_Faq, course_FaqRelationsOne, course_Testimonial, course_TestimonialRelationsOne, course_Seo, course_SeoRelationsOne, course_Benefit, course_BenefitRelationsOne, blogs, blogsRelationsOne, blogRelationsMany, blog_Seo, pages, businessLine, jobs, jobsRelationsMany, jobsQualification, jobsResponsibility, jobsDocument;
+var users, categories, categoriesRelations, courses, coursesRelationsOne, courseRelationsMany, course_learningMaterial, course_learningMaterialRelationsOne, course_Feature, course_FeatureRelationsOne, course_Faq, course_FaqRelationsOne, course_Testimonial, course_TestimonialRelationsOne, course_Seo, course_SeoRelationsOne, course_Benefit, course_BenefitRelationsOne, blogs, blogsRelationsOne, blogRelationsMany, blog_Seo, pages, businessLine, jobs, jobsRelationsMany, jobs_Qualification, jobs_Responsibility, jobs_Document;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -286,32 +286,32 @@ var init_schema = __esm({
       id: int("id").primaryKey().autoincrement(),
       title: varchar("title", { length: 255 }).notNull(),
       slug: varchar("slug", { length: 255 }).notNull(),
-      images: varchar("image", { length: 255 }).notNull(),
+      images: varchar("images", { length: 255 }).notNull(),
       status: mysqlEnum("status", ["draft", "published"]),
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().notNull(),
       deletedAt: timestamp("deletedAt")
     });
     jobsRelationsMany = relations(jobs, ({ many }) => ({
-      jobsQualification: many(jobsQualification),
-      jobsResponsibility: many(jobsResponsibility),
-      jobsDocument: many(jobsDocument)
+      jobs_Qualification: many(jobs_Qualification),
+      jobs_Responsibility: many(jobs_Responsibility),
+      jobs_Document: many(jobs_Document)
     }));
-    jobsQualification = mysqlTable("jobsQualification", {
+    jobs_Qualification = mysqlTable("jobs_Qualification", {
       id: int("id").primaryKey().autoincrement(),
       jobId: int("jobId").references(() => jobs.id),
       qualification: text("qualification").notNull(),
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().notNull()
     });
-    jobsResponsibility = mysqlTable("jobsResponsibility", {
+    jobs_Responsibility = mysqlTable("jobs_Responsibility", {
       id: int("id").primaryKey().autoincrement(),
       jobId: int("jobId").references(() => jobs.id),
       responsibility: text("responsibility").notNull(),
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().notNull()
     });
-    jobsDocument = mysqlTable("jobsDocument", {
+    jobs_Document = mysqlTable("jobs_Document", {
       id: int("id").primaryKey().autoincrement(),
       jobId: int("jobId").references(() => jobs.id),
       name: varchar("name", { length: 255 }).notNull(),
@@ -2247,7 +2247,7 @@ var init_testimonial_route = __esm({
 });
 
 // src/module/blogs/blog/blog.service.ts
-import { desc as desc4, eq as eq12, isNull as isNull5 } from "drizzle-orm";
+import { desc as desc4, eq as eq12, isNull as isNull5, sql as sql8 } from "drizzle-orm";
 import slugify3 from "slugify";
 var BlogsService;
 var init_blog_service = __esm({
@@ -2266,7 +2266,7 @@ var init_blog_service = __esm({
           slug: blogs.slug,
           category: categories.name,
           date: blogs.createdAt
-        }).from(blogs).where(eq12(blogs.status, "published")).where(isNull5(blogs.deletedAt)).orderBy(desc4(blogs.id)).leftJoin(categories, eq12(blogs.categoryId, categories.id)).limit(limit).offset(offset);
+        }).from(blogs).where(sql8`status = 'published' AND deletedAt IS NULL`).orderBy(desc4(blogs.id)).leftJoin(categories, eq12(blogs.categoryId, categories.id)).limit(limit).offset(offset);
         return pageBlog;
       }
       async create(createBlogDto) {
@@ -2369,7 +2369,7 @@ var init_blog_service = __esm({
           slug: blogs.slug,
           category: categories.name,
           date: blogs.createdAt
-        }).from(blogs).where(eq12(blogs.status, "draft")).where(isNull5(blogs.deletedAt)).orderBy(desc4(blogs.id)).limit(limit).offset(offset).leftJoin(categories, eq12(blogs.categoryId, categories.id));
+        }).from(blogs).where(isNull5(blogs.deletedAt)).orderBy(desc4(blogs.id)).limit(limit).offset(offset).leftJoin(categories, eq12(blogs.categoryId, categories.id));
         return pageBlog;
       }
     };
@@ -2869,7 +2869,7 @@ var init_analytic_route = __esm({
 });
 
 // src/module/pages/pages.service.ts
-import { desc as desc5, eq as eq14, sql as sql8 } from "drizzle-orm";
+import { desc as desc5, eq as eq14, sql as sql9 } from "drizzle-orm";
 var PagesService;
 var init_pages_service = __esm({
   "src/module/pages/pages.service.ts"() {
@@ -2915,7 +2915,7 @@ var init_pages_service = __esm({
             seoDescription: pages.seoDescription,
             content: pages.content,
             status: pages.status
-          }).from(pages).where(sql8`pages.url = ${url} and pages.status is published`);
+          }).from(pages).where(sql9`pages.url = ${url} and pages.status is published`);
           return page[0];
         } catch (error) {
           return "Page not found";
@@ -3048,7 +3048,8 @@ var init_pages_route = __esm({
 });
 
 // src/module/jobs/job/job.service.ts
-import { eq as eq15, sql as sql9 } from "drizzle-orm";
+import { eq as eq15, sql as sql10 } from "drizzle-orm";
+import slugify4 from "slugify";
 var JobService;
 var init_job_service = __esm({
   "src/module/jobs/job/job.service.ts"() {
@@ -3067,7 +3068,7 @@ var init_job_service = __esm({
             title: jobs.title,
             slug: jobs.slug,
             images: jobs.images
-          }).from(jobs).where(sql9`status = 'published' AND deleted_at IS NULL`).limit(limit).offset(offset);
+          }).from(jobs).where(sql10`jobs.deletedAt is null and jobs.status = 'published'`).limit(limit).offset(offset);
           if (pageJob.length === 0) {
             return "Job not found";
           }
@@ -3084,7 +3085,7 @@ var init_job_service = __esm({
             slug: jobs.slug,
             images: jobs.images
           }).from(jobs).where(
-            sql9`slug = ${slug} AND status = 'published' AND deleted_at IS NULL`
+            sql10`jobs.slug = ${slug} and jobs.deletedAt is null and jobs.status = 'published'`
           );
           if (job.length === 0) {
             return "Job not found";
@@ -3092,11 +3093,15 @@ var init_job_service = __esm({
           return job[0];
         } catch (error) {
           console.error("Error in JobService.show:", error);
-          throw new Error("Failed to get Job");
+          return "Job not found";
         }
       }
       async create(CreateJobDto) {
         try {
+          CreateJobDto.slug = slugify4(CreateJobDto.title, {
+            replacement: "-",
+            lower: true
+          });
           await db.insert(jobs).values(CreateJobDto);
           return "Job created successfully!";
         } catch (error) {
@@ -3106,6 +3111,12 @@ var init_job_service = __esm({
       }
       async update(slug, UpdateJobDto) {
         try {
+          if (UpdateJobDto.title) {
+            UpdateJobDto.slug = slugify4(UpdateJobDto.title, {
+              replacement: "-",
+              lower: true
+            });
+          }
           await db.update(jobs).set(UpdateJobDto).where(eq15(jobs.slug, slug));
           return "Job updated successfully!";
         } catch (error) {
@@ -3114,8 +3125,13 @@ var init_job_service = __esm({
         }
       }
       async delete(slug) {
-        await db.delete(jobs).where(eq15(jobs.slug, slug));
-        return "Job deleted successfully!";
+        try {
+          await db.update(jobs).set({ deletedAt: /* @__PURE__ */ new Date() }).where(eq15(jobs.slug, slug));
+          return "Job deleted successfully!";
+        } catch (error) {
+          console.error("Error in JobService.delete:", error);
+          throw new Error("Failed to delete Job");
+        }
       }
     };
   }
@@ -3237,7 +3253,7 @@ var init_job_route = __esm({
     upload3 = multer3({ storage: storage3 });
     router15 = Router15();
     jobController = new JobController();
-    router15.get("/", jobController.getAll).get("/:slug", [checkAuth, checkRole(["admin", "user"])], jobController.show).post(
+    router15.get("/", jobController.getAll).get("/:slug", jobController.show).post(
       "/create",
       [checkAuth, checkRole(["admin", "user"])],
       upload3.single("images"),
@@ -3247,12 +3263,509 @@ var init_job_route = __esm({
       [checkAuth, checkRole(["admin", "user"])],
       upload3.single("images"),
       jobController.update
-    ).delete(
+    ).patch(
       "/delete/:slug",
       [checkAuth, checkRole(["admin", "user"])],
       jobController.delete
     );
     job_route_default = router15;
+  }
+});
+
+// src/module/jobs/job-document/job-document.service.ts
+import { eq as eq16 } from "drizzle-orm";
+var Jobs_DocumentService;
+var init_job_document_service = __esm({
+  "src/module/jobs/job-document/job-document.service.ts"() {
+    "use strict";
+    init_database();
+    init_schema();
+    Jobs_DocumentService = class {
+      async getAll(page, limit) {
+        if (page <= 0 || limit <= 0) {
+          throw new Error("Invalid page or limit value");
+        }
+        try {
+          const offset = (page - 1) * limit;
+          const pageJobDocument = await db.select({
+            id: jobs_Document.id,
+            name: jobs_Document.name,
+            email: jobs_Document.email,
+            document: jobs_Document.document,
+            date: jobs_Document.createdAt
+          }).from(jobs_Document).limit(limit).offset(offset);
+          if (pageJobDocument.length === 0) {
+            return "Job Document not found";
+          }
+          return pageJobDocument;
+        } catch (error) {
+          console.error("Error in jobs_Documentervice.getAll:", error);
+          throw new Error("Failed to get JobDocument");
+        }
+      }
+      async create(jobId, CreatejobDocumentDto) {
+        try {
+          const newJobDocument = {
+            ...CreatejobDocumentDto,
+            jobId
+          };
+          const [createdJobDocumentId] = await db.insert(jobs_Document).values(newJobDocument);
+          return "JobDocument created successfully!";
+        } catch (error) {
+          console.error("Error in jobs_Documentervice.create:", error);
+          throw new Error("Failed to create JobDocument");
+        }
+      }
+      async delete(jobId) {
+        try {
+          await db.delete(jobs_Document).where(eq16(jobs_Document.id, jobId));
+          return "JobDocument deleted successfully!";
+        } catch (error) {
+          console.error("Error in jobs_Documentervice.delete:", error);
+          throw new Error("Failed to delete JobDocument");
+        }
+      }
+    };
+  }
+});
+
+// src/module/jobs/job-document/job-document.controller.ts
+import fs4 from "fs";
+var JobDocumentController;
+var init_job_document_controller = __esm({
+  "src/module/jobs/job-document/job-document.controller.ts"() {
+    "use strict";
+    init_job_document_service();
+    JobDocumentController = class {
+      constructor(jobs_DocumentService = new Jobs_DocumentService()) {
+        this.jobs_DocumentService = jobs_DocumentService;
+      }
+      getAll = async (req, res) => {
+        try {
+          const page = parseInt(req.query.page) || 1;
+          const limit = parseInt(req.query.limit) || 10;
+          const job = await this.jobs_DocumentService.getAll(page, limit);
+          return res.json(job);
+        } catch (error) {
+          console.error("Error in JobController.getAll:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+      create = async (req, res) => {
+        const jobId = Number(req.params.jobId);
+        const CreatejobDocumentDto = req.body;
+        try {
+          if (req.file) {
+            fs4.access("./public/documents/job/", (err) => {
+              if (err) {
+                console.log("Directory does not exist.");
+              }
+            });
+            const { buffer } = req.file;
+            const timestamp2 = (/* @__PURE__ */ new Date()).getTime();
+            const randomSuffix = Math.floor(Math.random() * 1e4);
+            const ref = `${timestamp2}-${randomSuffix}.pdf`;
+            fs4.writeFileSync("./public/documents/job/" + ref, buffer, "binary");
+            const link = `/documents/job/${ref}`;
+            CreatejobDocumentDto.document = link;
+          }
+          console.log(CreatejobDocumentDto.document);
+          const result = await this.jobs_DocumentService.create(
+            jobId,
+            CreatejobDocumentDto
+          );
+          return res.status(201).json({ message: result });
+        } catch (error) {
+          console.error("Error in JobController.create:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+      delete = async (req, res) => {
+        const jobId = Number(req.params.jobId);
+        try {
+          await this.jobs_DocumentService.delete(jobId);
+          return res.json({ message: "Job deleted successfully" });
+        } catch (error) {
+          console.error("Error in JobController.delete:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+    };
+  }
+});
+
+// src/module/jobs/job-document/job-document.route.ts
+var job_document_route_exports = {};
+__export(job_document_route_exports, {
+  default: () => job_document_route_default
+});
+import { Router as Router16 } from "express";
+import multer4 from "multer";
+var storage4, upload4, router16, jobDocumentController, job_document_route_default;
+var init_job_document_route = __esm({
+  "src/module/jobs/job-document/job-document.route.ts"() {
+    "use strict";
+    init_job_document_controller();
+    init_checkAuth();
+    init_checkRole();
+    storage4 = multer4.memoryStorage();
+    upload4 = multer4({ storage: storage4 });
+    router16 = Router16();
+    jobDocumentController = new JobDocumentController();
+    router16.get("/", jobDocumentController.getAll).post(
+      "/create/:jobId",
+      upload4.single("document"),
+      jobDocumentController.create
+    ).delete(
+      "/delete/:jobId",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobDocumentController.delete
+    );
+    job_document_route_default = router16;
+  }
+});
+
+// src/module/jobs/job-qualification/job-qualification.service.ts
+import { eq as eq17, sql as sql11 } from "drizzle-orm";
+var JobQualificationService;
+var init_job_qualification_service = __esm({
+  "src/module/jobs/job-qualification/job-qualification.service.ts"() {
+    "use strict";
+    init_database();
+    init_schema();
+    JobQualificationService = class {
+      async getAll(jobId, page, limit) {
+        if (page <= 0 || limit <= 0) {
+          throw new Error("Invalid page or limit value");
+        }
+        const offset = (page - 1) * limit;
+        const pagejobQualification = await db.select({
+          id: jobs_Qualification.id,
+          qualification: jobs_Qualification.qualification
+        }).from(jobs_Qualification).where(
+          sql11`jobs_Qualification.jobId = ${jobId} and jobs.deletedAt is null`
+        ).leftJoin(jobs, eq17(jobs_Qualification.jobId, jobs.id)).limit(limit).offset(offset);
+        if (pagejobQualification.length === 0) {
+          return { message: "No jobQualification found" };
+        }
+        return pagejobQualification;
+      }
+      async create(CreatejobQualificationDto) {
+        await db.insert(jobs_Qualification).values(CreatejobQualificationDto);
+        return "jobQualification created successfully!";
+      }
+      async update(UpdatejobQualificationDto) {
+        try {
+          for (const dto of UpdatejobQualificationDto) {
+            if (!dto.id) {
+              throw new Error('Invalid data. "id" is required for update.');
+            }
+            await db.update(jobs_Qualification).set(dto).where(eq17(jobs_Qualification.id, dto.id));
+          }
+          return "jobQualification updated successfully!";
+        } catch (error) {
+          console.error("Error in jobQualificationService.update:", error);
+          throw new Error("Failed to update Learning Material");
+        }
+      }
+      async delete(id) {
+        await db.delete(jobs_Qualification).where(eq17(jobs_Qualification.id, id));
+        return "jobQualification deleted successfully!";
+      }
+    };
+  }
+});
+
+// src/module/jobs/job-qualification/job-qualification.controller.ts
+var JobsQualificationController;
+var init_job_qualification_controller = __esm({
+  "src/module/jobs/job-qualification/job-qualification.controller.ts"() {
+    "use strict";
+    init_job_qualification_service();
+    JobsQualificationController = class {
+      constructor(jobsQualificationService = new JobQualificationService()) {
+        this.jobsQualificationService = jobsQualificationService;
+      }
+      getAll = async (req, res) => {
+        try {
+          const jobId = Number(req.params.jobId);
+          const page = parseInt(req.query.page) || 1;
+          const limit = parseInt(req.query.limit) || 10;
+          const jobs2 = await this.jobsQualificationService.getAll(
+            jobId,
+            page,
+            limit
+          );
+          return res.json(jobs2);
+        } catch (error) {
+          console.error("Error in jobsController.getAll:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+      create = async (req, res) => {
+        const jobId = Number(req.params.jobId);
+        const CreatejobQualificationDto = req.body;
+        const createdData = [];
+        CreatejobQualificationDto.forEach((item) => {
+          createdData.push(item);
+          createdData[createdData.length - 1].jobId = jobId;
+        });
+        try {
+          if (createdData.length > 0) {
+            const result = await this.jobsQualificationService.create(createdData);
+            return res.status(201).json({ message: result });
+          }
+        } catch (error) {
+          console.error("Error in Jobs_QualificationController.create:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+      update = async (req, res) => {
+        const jobId = Number(req.params.jobId);
+        const UpdatejobQualificationDto = req.body;
+        const createdData = [];
+        const updatedData = [];
+        UpdatejobQualificationDto.forEach((item) => {
+          if (item && item.hasOwnProperty("id")) {
+            updatedData.push(item);
+            updatedData[updatedData.length - 1].jobId = jobId;
+          } else {
+            createdData.push(item);
+            createdData[createdData.length - 1].jobId = jobId;
+          }
+        });
+        try {
+          if (createdData.length > 0) {
+            await this.jobsQualificationService.create(createdData);
+          }
+          if (updatedData.length > 0) {
+            await this.jobsQualificationService.update(updatedData);
+          }
+          return res.json({ message: "Jobs_Qualification updated successfully" });
+        } catch (error) {
+          console.error("Error in Jobs_QualificationController.update:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+      delete = async (req, res) => {
+        const jobs_qualificationId = Number(req.params.id);
+        try {
+          await this.jobsQualificationService.delete(jobs_qualificationId);
+          return res.json({ message: "Jobs_Qualification deleted successfully" });
+        } catch (error) {
+          console.error("Error in Jobs_QualificationController.delete:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+    };
+  }
+});
+
+// src/module/jobs/job-qualification/job-qualification.route.ts
+var job_qualification_route_exports = {};
+__export(job_qualification_route_exports, {
+  default: () => job_qualification_route_default
+});
+import { Router as Router17 } from "express";
+var router17, jobsQualificationController, job_qualification_route_default;
+var init_job_qualification_route = __esm({
+  "src/module/jobs/job-qualification/job-qualification.route.ts"() {
+    "use strict";
+    init_job_qualification_controller();
+    init_checkAuth();
+    init_checkRole();
+    router17 = Router17();
+    jobsQualificationController = new JobsQualificationController();
+    router17.get(
+      "/:jobId",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobsQualificationController.getAll
+    ).post(
+      "/create/:jobId",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobsQualificationController.create
+    ).patch(
+      "/update/:jobId",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobsQualificationController.update
+    ).delete(
+      "/delete/:id",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobsQualificationController.delete
+    );
+    job_qualification_route_default = router17;
+  }
+});
+
+// src/module/jobs/job-responsibility/job-responsibility.service.ts
+import { eq as eq18, sql as sql12 } from "drizzle-orm";
+var JobResponsibilityService;
+var init_job_responsibility_service = __esm({
+  "src/module/jobs/job-responsibility/job-responsibility.service.ts"() {
+    "use strict";
+    init_database();
+    init_schema();
+    JobResponsibilityService = class {
+      async getAll(jobId, page, limit) {
+        if (page <= 0 || limit <= 0) {
+          throw new Error("Invalid page or limit value");
+        }
+        const offset = (page - 1) * limit;
+        const pagejobResponsibility = await db.select({
+          id: jobs_Responsibility.id,
+          responsibility: jobs_Responsibility.responsibility
+        }).from(jobs_Responsibility).where(
+          sql12`jobs_Responsibility.jobId = ${jobId} and jobs.deletedAt is null`
+        ).leftJoin(jobs, eq18(jobs_Responsibility.jobId, jobs.id)).limit(limit).offset(offset);
+        if (pagejobResponsibility.length === 0) {
+          return { message: "No jobResponsibility found" };
+        }
+        return pagejobResponsibility;
+      }
+      async create(CreatejobResponsibilityDto) {
+        await db.insert(jobs_Responsibility).values(CreatejobResponsibilityDto);
+        return "jobResponsibility created successfully!";
+      }
+      async update(UpdatejobResponsibilityDto) {
+        try {
+          for (const dto of UpdatejobResponsibilityDto) {
+            if (!dto.id) {
+              throw new Error('Invalid data. "id" is required for update.');
+            }
+            await db.update(jobs_Responsibility).set(dto).where(eq18(jobs_Responsibility.id, dto.id));
+          }
+          return "jobResponsibility updated successfully!";
+        } catch (error) {
+          console.error("Error in jobResponsibilityService.update:", error);
+          throw new Error("Failed to update Learning Material");
+        }
+      }
+      async delete(id) {
+        await db.delete(jobs_Responsibility).where(eq18(jobs_Responsibility.id, id));
+        return "jobResponsibility deleted successfully!";
+      }
+    };
+  }
+});
+
+// src/module/jobs/job-responsibility/job-responsibility.controller.ts
+var JobsResponsibilityController;
+var init_job_responsibility_controller = __esm({
+  "src/module/jobs/job-responsibility/job-responsibility.controller.ts"() {
+    "use strict";
+    init_job_responsibility_service();
+    JobsResponsibilityController = class {
+      constructor(jobsResponsibilityService = new JobResponsibilityService()) {
+        this.jobsResponsibilityService = jobsResponsibilityService;
+      }
+      getAll = async (req, res) => {
+        try {
+          const jobId = Number(req.params.jobId);
+          const page = parseInt(req.query.page) || 1;
+          const limit = parseInt(req.query.limit) || 10;
+          const jobs2 = await this.jobsResponsibilityService.getAll(
+            jobId,
+            page,
+            limit
+          );
+          return res.json(jobs2);
+        } catch (error) {
+          console.error("Error in jobsController.getAll:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+      create = async (req, res) => {
+        const jobId = Number(req.params.jobId);
+        const CreatejobResponsibilityDto = req.body;
+        const createdData = [];
+        CreatejobResponsibilityDto.forEach((item) => {
+          createdData.push(item);
+          createdData[createdData.length - 1].jobId = jobId;
+        });
+        try {
+          if (createdData.length > 0) {
+            const result = await this.jobsResponsibilityService.create(createdData);
+            return res.status(201).json({ message: result });
+          }
+        } catch (error) {
+          console.error("Error in Jobs_ResponsibilityController.create:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+      update = async (req, res) => {
+        const jobId = Number(req.params.jobId);
+        const UpdatejobResponsibilityDto = req.body;
+        const createdData = [];
+        const updatedData = [];
+        UpdatejobResponsibilityDto.forEach((item) => {
+          if (item && item.hasOwnProperty("id")) {
+            updatedData.push(item);
+            updatedData[updatedData.length - 1].jobId = jobId;
+          } else {
+            createdData.push(item);
+            createdData[createdData.length - 1].jobId = jobId;
+          }
+        });
+        try {
+          if (createdData.length > 0) {
+            await this.jobsResponsibilityService.create(createdData);
+          }
+          if (updatedData.length > 0) {
+            await this.jobsResponsibilityService.update(updatedData);
+          }
+          return res.json({ message: "Jobs_Responsibility updated successfully" });
+        } catch (error) {
+          console.error("Error in Jobs_ResponsibilityController.update:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+      delete = async (req, res) => {
+        const jobs_responsibilityId = Number(req.params.id);
+        try {
+          await this.jobsResponsibilityService.delete(jobs_responsibilityId);
+          return res.json({ message: "Jobs_Responsibility deleted successfully" });
+        } catch (error) {
+          console.error("Error in Jobs_ResponsibilityController.delete:", error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      };
+    };
+  }
+});
+
+// src/module/jobs/job-responsibility/job-responsibility.route.ts
+var job_responsibility_route_exports = {};
+__export(job_responsibility_route_exports, {
+  default: () => job_responsibility_route_default
+});
+import { Router as Router18 } from "express";
+var router18, jobsResponsibilityController, job_responsibility_route_default;
+var init_job_responsibility_route = __esm({
+  "src/module/jobs/job-responsibility/job-responsibility.route.ts"() {
+    "use strict";
+    init_job_responsibility_controller();
+    init_checkAuth();
+    init_checkRole();
+    router18 = Router18();
+    jobsResponsibilityController = new JobsResponsibilityController();
+    router18.get(
+      "/:jobId",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobsResponsibilityController.getAll
+    ).post(
+      "/create/:jobId",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobsResponsibilityController.create
+    ).patch(
+      "/update/:jobId",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobsResponsibilityController.update
+    ).delete(
+      "/delete/:id",
+      [checkAuth, checkRole(["admin", "user"])],
+      jobsResponsibilityController.delete
+    );
+    job_responsibility_route_default = router18;
   }
 });
 
@@ -3310,6 +3823,18 @@ app.use("/api/blog/seo", (init_seo_route2(), __toCommonJS(seo_route_exports2)).d
 app.use("/api/analytic", (init_analytic_route(), __toCommonJS(analytic_route_exports)).default);
 app.use("/api/page", (init_pages_route(), __toCommonJS(pages_route_exports)).default);
 app.use("/api/job", (init_job_route(), __toCommonJS(job_route_exports)).default);
+app.use(
+  "/api/job-document",
+  (init_job_document_route(), __toCommonJS(job_document_route_exports)).default
+);
+app.use(
+  "/api/job-qualification",
+  (init_job_qualification_route(), __toCommonJS(job_qualification_route_exports)).default
+);
+app.use(
+  "/api/job-responsibility",
+  (init_job_responsibility_route(), __toCommonJS(job_responsibility_route_exports)).default
+);
 var app_default = app;
 
 // src/index.ts

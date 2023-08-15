@@ -266,7 +266,7 @@ export const jobs = mysqlTable('jobs', {
   id: int('id').primaryKey().autoincrement(),
   title: varchar('title', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 255 }).notNull(),
-  images: varchar('image', { length: 255 }).notNull(),
+  images: varchar('images', { length: 255 }).notNull(),
   status: mysqlEnum('status', ['draft', 'published']),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
@@ -274,12 +274,12 @@ export const jobs = mysqlTable('jobs', {
 });
 
 export const jobsRelationsMany = relations(jobs, ({ many }) => ({
-  jobsQualification: many(jobsQualification),
-  jobsResponsibility: many(jobsResponsibility),
-  jobsDocument: many(jobsDocument),
+  jobs_Qualification: many(jobs_Qualification),
+  jobs_Responsibility: many(jobs_Responsibility),
+  jobs_Document: many(jobs_Document),
 }));
 
-export const jobsQualification = mysqlTable('jobsQualification', {
+export const jobs_Qualification = mysqlTable('jobs_Qualification', {
   id: int('id').primaryKey().autoincrement(),
   jobId: int('jobId').references(() => jobs.id),
   qualification: text('qualification').notNull(),
@@ -287,7 +287,7 @@ export const jobsQualification = mysqlTable('jobsQualification', {
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 });
 
-export const jobsResponsibility = mysqlTable('jobsResponsibility', {
+export const jobs_Responsibility = mysqlTable('jobs_Responsibility', {
   id: int('id').primaryKey().autoincrement(),
   jobId: int('jobId').references(() => jobs.id),
   responsibility: text('responsibility').notNull(),
@@ -295,7 +295,7 @@ export const jobsResponsibility = mysqlTable('jobsResponsibility', {
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 });
 
-export const jobsDocument = mysqlTable('jobsDocument', {
+export const jobs_Document = mysqlTable('jobs_Document', {
   id: int('id').primaryKey().autoincrement(),
   jobId: int('jobId').references(() => jobs.id),
   name: varchar('name', { length: 255 }).notNull(),
